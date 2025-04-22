@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,10 +50,11 @@ func TestAddGetDelete(t *testing.T) {
 	// проверьте, что значения всех полей в полученном объекте совпадают со значениями полей в переменной parcel
 	got, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, parcel.Client, got.Client)
-	require.Equal(t, parcel.Status, got.Status)
-	require.Equal(t, parcel.Address, got.Address)
-	require.Equal(t, parcel.CreatedAt, got.CreatedAt)
+	assert.Equal(t, parcel.Number, got.Number)
+	assert.Equal(t, parcel.Client, got.Client)
+	assert.Equal(t, parcel.Status, got.Status)
+	assert.Equal(t, parcel.Address, got.Address)
+	assert.Equal(t, parcel.CreatedAt, got.CreatedAt)
 
 	// delete
 	// удалите добавленную посылку, убедитесь в отсутствии ошибки
@@ -61,7 +63,8 @@ func TestAddGetDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = store.Get(id)
-	require.Error(t, err)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 // TestSetAddress проверяет обновление адреса
@@ -89,7 +92,7 @@ func TestSetAddress(t *testing.T) {
 	// получите добавленную посылку и убедитесь, что адрес обновился
 	got, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, newAddress, got.Address)
+	assert.Equal(t, newAddress, got.Address)
 }
 
 // TestSetStatus проверяет обновление статуса
@@ -116,7 +119,7 @@ func TestSetStatus(t *testing.T) {
 	// получите добавленную посылку и убедитесь, что статус обновился
 	got, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, ParcelStatusSent, got.Status)
+	assert.Equal(t, ParcelStatusSent, got.Status)
 }
 
 // TestGetByClient проверяет получение посылок по идентификатору клиента
@@ -156,18 +159,13 @@ func TestGetByClient(t *testing.T) {
 	// get by client
 	storedParcels, err := store.GetByClient(client) // получите список посылок по идентификатору клиента, сохранённого в переменной client
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(storedParcels), 3) // убедитесь, что количество полученных посылок совпадает с количеством добавленных
+	assert.Len(t, storedParcels, len(parcels)) // убедитесь, что количество полученных посылок совпадает с количеством добавленных
 
 	// check
 	for _, parcel := range storedParcels {
 		// в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		// убедитесь, что значения полей полученных посылок заполнены верно
-		if expected, ok := parcelMap[parcel.Number]; ok {
-			require.Equal(t, expected.Client, parcel.Client)
-			require.Equal(t, expected.Status, parcel.Status)
-			require.Equal(t, expected.Address, parcel.Address)
-			require.Equal(t, expected.CreatedAt, parcel.CreatedAt)
-		}
+		assert.Equal(t, parcelMap[parcel.Number], parcel)
 	}
 }
